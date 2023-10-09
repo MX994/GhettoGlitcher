@@ -1,7 +1,8 @@
 #ifndef SERIAL_TRIGGER
 #define SERIAL_TRIGGER
 
-#include "<ctypes.h>"
+#include <stdio.h>
+#include <stdlib.h>
 
 // UART pins.
 #define UART_TX 0
