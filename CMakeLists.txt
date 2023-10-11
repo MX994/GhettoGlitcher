@@ -8,9 +8,9 @@ set(PICO_BOARD pico_w)
 pico_sdk_init()
 
 add_executable(picowhisperer
-    picowhisperer.cpp
+    ghettoglitcher.cpp
     serial_console.cpp
-    # serial_trigger.cpp
+    serial_trigger.cpp
 )
 
 pico_add_extra_outputs(picowhisperer)
@@ -24,4 +24,4 @@ target_link_libraries(picowhisperer
 )
 
 pico_enable_stdio_usb(picowhisperer 1)
-pico_enable_stdio_uart(picowhisperer 1)
+# pico_enable_stdio_uart(picowhisperer 1)
