@@ -7,15 +7,15 @@ set(PICO_BOARD pico_w)
 
 pico_sdk_init()
 
-add_executable(picowhisperer
+add_executable(ghettoglitcher
     ghettoglitcher.cpp
     serial_console.cpp
     serial_trigger.cpp
 )
 
-pico_add_extra_outputs(picowhisperer)
+pico_add_extra_outputs(ghettoglitcher)
 
-target_link_libraries(picowhisperer 
+target_link_libraries(ghettoglitcher 
     pico_stdlib 
     pico_cyw43_arch_none
     hardware_pwm 
@@ -23,5 +23,5 @@ target_link_libraries(picowhisperer
     pico_multicore
 )
 
-pico_enable_stdio_usb(picowhisperer 1)
+pico_enable_stdio_usb(ghettoglitcher 1)
 # pico_enable_stdio_uart(picowhisperer 1)

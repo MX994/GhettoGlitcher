@@ -20,10 +20,10 @@ void read_from_stdin() {
         if (c == EOF) {
             return;
         }
-
+        
         putchar(c);
 
-        if (c == '\r' || c == ' ') {
+        if (c == '\r') {
             return;
         }
 
@@ -31,7 +31,7 @@ void read_from_stdin() {
             continue;
         }
 
-        if (strlen(serial_buffer) >= 255) {
+        if (strlen(serial_buffer) >= sizeof(serial_buffer) - 1) {
             return;
         }
 
@@ -40,33 +40,36 @@ void read_from_stdin() {
 }
 
 bool handle_command(char *command) {
-    if (!strcmp(command, "ping")) {
+    char internal[256];
+    memcpy(internal, command, 256);
+    char *token = strtok(internal, " ");
+    if (!strcmp(token, "ping")) {
         multicore_fifo_push_blocking(CMD_PING);
         return true;
-    } else if (!strcmp(command, "pattern")) {
+    } else if (!strcmp(token, "arm")) {
+        multicore_fifo_push_blocking(CMD_ARM);
+        return true;
+    } else if (!strcmp(token, "disarm")) {
+        multicore_fifo_push_blocking(CMD_DISARM);
+        return true;
+    } else if (!strcmp(token, "pattern")) {
         multicore_fifo_push_blocking(CMD_SET_PATTERN);
-        read_from_stdin();
-        multicore_fifo_push_blocking(strlen(serial_buffer));
-        for (int i = 0; i < strlen(serial_buffer); ++i) {
-            multicore_fifo_push_blocking(serial_buffer[i]);
+        char *pattern = strtok(NULL, " ");
+        uint32_t pattern_length = strlen(pattern);
+        multicore_fifo_push_blocking(pattern_length);
+        for (int i = 0; i < pattern_length; ++i) {
+            multicore_fifo_push_blocking(pattern[i]);
         }
         return true;
-    } else if (!strcmp(command, "baud")) {
+    } else if (!strcmp(token, "baud")) {
         multicore_fifo_push_blocking(CMD_SET_BAUD_RATE);
-        read_from_stdin();
-        multicore_fifo_push_blocking(atoi(serial_buffer));
+        multicore_fifo_push_blocking(atoi(strtok(NULL, " ")));
         return true;
-    } else if (!strcmp(command, "data_stop_bits")) {
-        multicore_fifo_push_blocking(CMD_SET_DATA_STOP_BITS);
-        read_from_stdin();
-        multicore_fifo_push_blocking(atoi(serial_buffer));
-        read_from_stdin();
-        multicore_fifo_push_blocking(atoi(serial_buffer));
-        return true;
-    } else if (!strcmp(command, "parity")) {
-        multicore_fifo_push_blocking(CMD_SET_PARITY);
-        read_from_stdin();
-        multicore_fifo_push_blocking(atoi(serial_buffer));
+    } else if (!strcmp(token, "format")) {
+        multicore_fifo_push_blocking(CMD_SET_FORMAT);
+        multicore_fifo_push_blocking(atoi(strtok(NULL, " ")));
+        multicore_fifo_push_blocking(atoi(strtok(NULL, " ")));
+        multicore_fifo_push_blocking(atoi(strtok(NULL, " ")));
         return true;
     }
     return false;
@@ -82,17 +85,11 @@ void serial_console() {
         if (!handle_command(serial_buffer)) {
             printf("GhettoGlitcher Commands:\n");
             printf("- ping: pong\n");
+            printf("- arm: wait for a pattern to show up over UART\n");
+            printf("- disarm: stop waiting for a pattern\n");
             printf("- pattern <pattern>: Set the pattern to look for.\n");
-            printf(
-                "- baud <baud_rate>: Set the baud rate of the communication "
-                "channel.\n");
-            printf(
-                "- data_stop_bits <data_bits> <stop_bits>: Set the number of "
-                "bits to "
-                "use for data and stop.\n");
-            printf(
-                "- parity <parity>: Set parity used in the communication "
-                "channel.\n");
+            printf("- baud <baud_rate>: Set the baud rate of the communication channel.\n");
+            printf("- format <data_bits> <stop_bits> <parity>: Sets the data format (data bits, stop bits, parity bit)\n");
         }
         printf("\n");
     }

@@ -6,29 +6,24 @@
 #include <string.h>
 
 #include "pico/stdlib.h"
+#include "trigger.hpp"
 
-// UART pins.
-#define UART_TX 0
-#define UART_RX 1
-
-// UART Controller.
-#define UART_CTRL_ID 0
-
-class SerialTrigger {
+class SerialTrigger : Trigger {
    public:
     SerialTrigger();
+    void Arm();
+    void Disarm();
     void SetPattern(uint8_t *pattern, uint32_t size);
-    void SetUARTChannel(uint32_t id);
     void SetBaudRate(uint32_t baud);
-    void SetDataAndStopBits(uint32_t data_bits, uint32_t stop_bits);
-    void SetParity(uint32_t parity);
-    void OnRX();
+    void SetFormat(uint32_t data_bits, uint32_t stop_bits, uart_parity_t parity);
+    void Test();
+    bool IsArmed();
 
    private:
-    uint8_t *match_buffer;
-    uint8_t *pattern;
-    uint32_t pattern_length;
-    uint32_t uart_id, baud, data_bits, stop_bits, parity;
+    uint8_t *m_MatchBuffer;
+    uint8_t *m_Pattern;
+    uint32_t m_PatternLength;
+    uint32_t m_Baud, m_DataBits, m_StopBits, m_Parity;
 };
 
 #endif
