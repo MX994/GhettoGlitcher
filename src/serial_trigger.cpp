@@ -1,5 +1,4 @@
 #include "serial_trigger.hpp"
-#include "hardware_map.hpp"
 
 namespace GhettoGlitcha {
     SerialTrigger::SerialTrigger() {
@@ -55,14 +54,13 @@ namespace GhettoGlitcha {
     }
 
     // UART ISR.
-    void SerialTrigger::Test() {
+    bool SerialTrigger::Test() {
         // Only parse if data && is armed.
         if (this->m_Armed) {
             // Shift all elements left by 1 (discarding buf[0])
             for (int i = 0; i < this->m_PatternLength - 1; ++i) {
                 this->m_MatchBuffer[i] = this->m_MatchBuffer[i + 1];
             }
-            Serial.println((char *)this->m_MatchBuffer);
             // Add new element to buffer.
             while (Serial.available() == 0);
             this->m_MatchBuffer[this->m_PatternLength - 1] = Serial1.read();
@@ -76,7 +74,9 @@ namespace GhettoGlitcha {
 
                 // Disable this to prevent multiple reports.
                 this->Disarm();
+                return true;
             }
         }
+        return false;
     }
 }

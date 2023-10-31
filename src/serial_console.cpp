@@ -1,11 +1,12 @@
 #include "serial_console.hpp"
 
-#include <Arduino.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 namespace GhettoGlitcha {
+    Console::Console() {
+        g_Trigger = new GhettoGlitcha::SerialTrigger();
+        while (!g_TaskGuard) {
+            g_TaskGuard = xSemaphoreCreateMutex();
+        }
+    }
     void Console::Execute() {
         char command_buffer[0x100];
         memset(command_buffer, 0, 0x100);
@@ -59,24 +60,52 @@ namespace GhettoGlitcha {
             Serial.println("PONG!");
             return true;
         } else if (!strcmp(token, "arm")) {
-            xTaskCreatePinnedToCore(ArmedTriggerWaitPattern, "ArmedTrigger", 0x400, NULL, 1, &g_TriggerTaskHandle, 0);
+            if (xSemaphoreTake(g_TaskGuard, g_SemaphoreTicks)) {
+                // Check if armed already.
+                if (g_Trigger->IsArmed()) {
+                    Serial.println("Already waiting for the target. Aborting...");
+                } else {
+                    g_Trigger->Arm();
+                    xTaskCreatePinnedToCore(ArmedTriggerWaitPattern, "ArmedTrigger", 0x400, (void *)this, 1, &g_TriggerTaskHandle, 0);
+                }
+                xSemaphoreGive(g_TaskGuard);
+            } else {
+                Serial.println("Could not take semaphore after the set amount of ticks, probably in use.");
+            }
             return true;
         } else if (!strcmp(token, "disarm")) {
+            if (xSemaphoreTake(g_TaskGuard, g_SemaphoreTicks)) {
+                g_Trigger->Disarm();
+                xSemaphoreGive(g_TaskGuard);
+            } else {
+                Serial.println("Could not take semaphore after the set amount of ticks, probably in use.");
+            }
             return true;
         } else if (!strcmp(token, "pattern")) {
             char *pattern = strtok(NULL, " ");
             uint32_t pattern_length = strlen(pattern);
+            ((SerialTrigger*)g_Trigger)->SetPattern((uint8_t*)pattern, pattern_length);
             return true;
         } else if (!strcmp(token, "baud")) {
-            uint32_t new_baud = atoi(strtok(NULL, " "));
+            ((SerialTrigger*)g_Trigger)->SetBaudRate(atoi(strtok(NULL, " ")));
             return true;
         }
         return false;
     }
 
-    void Console::ArmedTriggerWaitPattern(void *p_Parameters){
+    static void ArmedTriggerWaitPattern(void *p_Trigger) {
+        // Pass in an instance of the trigger object.
+        GenericTrigger *c_Trigger = (GenericTrigger *)p_Trigger;
         for (;;) {
-
+            if (xSemaphoreTake(g_TaskGuard, g_SemaphoreTicks)) {
+                // Hold resource so we can run the test.
+                if (c_Trigger->Test()) {
+                    // Clean up task & exit.
+                    xSemaphoreGive(g_TaskGuard);
+                    break;
+                }
+            }
         }
+        vTaskDelete(NULL);
     }
 }

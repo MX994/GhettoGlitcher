@@ -4,16 +4,17 @@
 #include <HardwareSerial.h>
 #include <Arduino.h>
 #include "generic_trigger.hpp"
+#include "hardware_map.hpp"
 
 namespace GhettoGlitcha {
-    class SerialTrigger : GenericTrigger {
+    class SerialTrigger : public GenericTrigger {
     public:
         SerialTrigger();
         void Arm();
         void Disarm();
         void SetPattern(uint8_t *pattern, uint32_t size);
         void SetBaudRate(uint32_t baud);
-        void Test();
+        bool Test();
         bool IsArmed();
 
     private:

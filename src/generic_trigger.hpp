@@ -4,6 +4,11 @@
 class GenericTrigger {
     protected:
         bool m_Armed;
+    public:
+        virtual bool Test();
+        virtual bool IsArmed();
+        virtual void Arm();
+        virtual void Disarm();
 };
 
 #endif
