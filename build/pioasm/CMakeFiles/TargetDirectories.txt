@@ -1,3 +1,0 @@
-/home/ch340/Documents/PicoWhisperer/build/pioasm/CMakeFiles/pioasm.dir
-/home/ch340/Documents/PicoWhisperer/build/pioasm/CMakeFiles/edit_cache.dir
-/home/ch340/Documents/PicoWhisperer/build/pioasm/CMakeFiles/rebuild_cache.dir
