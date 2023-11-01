@@ -1,20 +1,19 @@
 #include "serial_console.hpp"
+#include "soc/rtc_wdt.h"
 
 namespace GhettoGlitcha {
     Console::Console() {
         g_Trigger = new GhettoGlitcha::SerialTrigger();
-        while (!g_TaskGuard) {
-            g_TaskGuard = xSemaphoreCreateMutex();
-        }
+        g_TaskGuard = xSemaphoreCreateMutex();
     }
     void Console::Execute() {
         char command_buffer[0x100];
         memset(command_buffer, 0, 0x100);
         for (;;) {
-            Serial.print(" > ");
+            Serial.print("> ");
             Console::Read(command_buffer);
             Serial.println("");
-            if (!this->Handle(command_buffer)) {
+            if (!strlen(command_buffer) || !this->Handle(command_buffer)) {
                 Serial.println("GhettoGlitcher Commands:");
                 Serial.println("- ping: pong");
                 Serial.println("- arm: wait for a pattern to show up over UART");
@@ -52,6 +51,7 @@ namespace GhettoGlitcha {
     bool Console::Handle(char *command_buffer) {
         // Start tokenizing the input.
         char internal_command_buffer[0x100];
+        memset(internal_command_buffer, 0, 0x100);
         memcpy(internal_command_buffer, command_buffer, sizeof(internal_command_buffer));
         char *token = strtok(internal_command_buffer, " ");
 
@@ -60,30 +60,20 @@ namespace GhettoGlitcha {
             Serial.println("PONG!");
             return true;
         } else if (!strcmp(token, "arm")) {
-            if (xSemaphoreTake(g_TaskGuard, g_SemaphoreTicks)) {
-                // Check if armed already.
-                if (g_Trigger->IsArmed()) {
-                    Serial.println("Already waiting for the target. Aborting...");
-                } else {
-                    g_Trigger->Arm();
-                    xTaskCreatePinnedToCore(ArmedTriggerWaitPattern, "ArmedTrigger", 0x400, (void *)this, 1, &g_TriggerTaskHandle, 0);
-                }
-                xSemaphoreGive(g_TaskGuard);
-            } else {
-                Serial.println("Could not take semaphore after the set amount of ticks, probably in use.");
+            // Check if armed already.
+            if (g_Trigger->IsArmed()) {
+                Serial.println("Already waiting for the target. Aborting...");
+            } else if (g_Trigger->Arm()) {
+                xTaskCreatePinnedToCore(ArmedTriggerWaitPattern, "ArmedTrigger", 0x400, (void *)this->g_Trigger, 1, &g_TriggerTaskHandle, 0);
             }
             return true;
         } else if (!strcmp(token, "disarm")) {
-            if (xSemaphoreTake(g_TaskGuard, g_SemaphoreTicks)) {
-                g_Trigger->Disarm();
-                xSemaphoreGive(g_TaskGuard);
-            } else {
-                Serial.println("Could not take semaphore after the set amount of ticks, probably in use.");
-            }
+            g_Trigger->Disarm();
             return true;
         } else if (!strcmp(token, "pattern")) {
             char *pattern = strtok(NULL, " ");
             uint32_t pattern_length = strlen(pattern);
+            pattern[pattern_length] = '\0';
             ((SerialTrigger*)g_Trigger)->SetPattern((uint8_t*)pattern, pattern_length);
             return true;
         } else if (!strcmp(token, "baud")) {
@@ -96,14 +86,11 @@ namespace GhettoGlitcha {
     static void ArmedTriggerWaitPattern(void *p_Trigger) {
         // Pass in an instance of the trigger object.
         GenericTrigger *c_Trigger = (GenericTrigger *)p_Trigger;
+        Serial.println("We're still alive.");
         for (;;) {
-            if (xSemaphoreTake(g_TaskGuard, g_SemaphoreTicks)) {
-                // Hold resource so we can run the test.
-                if (c_Trigger->Test()) {
-                    // Clean up task & exit.
-                    xSemaphoreGive(g_TaskGuard);
-                    break;
-                }
+            if (c_Trigger->Test()) { 
+                Serial.println("Hit!");
+                break;
             }
         }
         vTaskDelete(NULL);

@@ -7,7 +7,7 @@ class GenericTrigger {
     public:
         virtual bool Test();
         virtual bool IsArmed();
-        virtual void Arm();
+        virtual bool Arm();
         virtual void Disarm();
 };
 

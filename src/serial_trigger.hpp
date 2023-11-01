@@ -10,7 +10,7 @@ namespace GhettoGlitcha {
     class SerialTrigger : public GenericTrigger {
     public:
         SerialTrigger();
-        void Arm();
+        bool Arm();
         void Disarm();
         void SetPattern(uint8_t *pattern, uint32_t size);
         void SetBaudRate(uint32_t baud);
