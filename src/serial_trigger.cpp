@@ -77,16 +77,29 @@ namespace GhettoGlitcha {
 
             // Check if it matches pattern.
             if (!memcmp(this->m_MatchBuffer, this->m_Pattern, this->m_PatternLength)) {
+                for (int i = 0; i < this->c_ExtOffsetCycles; ++i);
                 // Time to trigger.
                 digitalWrite(EMP_TRIGGER_PIN, HIGH);
                 delayMicroseconds(200);
+                for (int i = 0; i < this->c_RepeatCycles; ++i);
                 digitalWrite(EMP_TRIGGER_PIN, LOW);
-
                 // Disable this to prevent multiple reports.
                 this->Disarm();
                 return true;
             }
         }
         return false;
+    }
+
+    void SerialTrigger::SetExtOffset(uint64_t cycles) {
+        this->c_ExtOffsetCycles = cycles;
+    }
+
+    void SerialTrigger::SetRepeat(uint64_t cycles) {
+        this->c_RepeatCycles = cycles;
+    }
+
+    const char *SerialTrigger::TriggerType() {
+        return "Serial";
     }
 }

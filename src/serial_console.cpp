@@ -9,6 +9,7 @@ namespace GhettoGlitcha {
     void Console::Execute() {
         char command_buffer[0x100];
         memset(command_buffer, 0, 0x100);
+        uint64_t c_ExtCycleCount = 0, c_RepeatCycleCount = 1;
         for (;;) {
             Serial.print("> ");
             Console::Read(command_buffer);
@@ -16,10 +17,19 @@ namespace GhettoGlitcha {
             if (!strlen(command_buffer) || !this->Handle(command_buffer)) {
                 Serial.println("GhettoGlitcher Commands:");
                 Serial.println("- ping: pong");
-                Serial.println("- arm: wait for a pattern to show up over UART");
-                Serial.println("- disarm: stop waiting for a pattern");
-                Serial.println("- pattern <pattern>: Set the pattern to look for.");
-                Serial.println("- baud <baud_rate>: Set the baud rate of the communication channel.");
+                Serial.println("- arm: wait for trigger.");
+                Serial.println("- disarm: stop waiting for trigger.");
+                Serial.println("- ext_offset: how many cycles to wait before pulsing.");
+                Serial.println("- repeat: how many cycles to pulse for.");
+
+                const char *trigger_type = g_Trigger->TriggerType();
+                Serial.printf("Trigger Mode: %s\n", trigger_type);
+                if (!strcmp(trigger_type, "Serial")) {
+                    Serial.println("- pattern <pattern>: Set the pattern to look for.");
+                    Serial.println("- baud <baud_rate>: Set the baud rate of the communication channel.");
+                } 
+                if (!strcmp(trigger_type, "Signal")) {
+                }
             }
         }
     }
@@ -70,15 +80,41 @@ namespace GhettoGlitcha {
         } else if (!strcmp(token, "disarm")) {
             g_Trigger->Disarm();
             return true;
-        } else if (!strcmp(token, "pattern")) {
-            char *pattern = strtok(NULL, " ");
-            uint32_t pattern_length = strlen(pattern);
-            pattern[pattern_length] = '\0';
-            ((SerialTrigger*)g_Trigger)->SetPattern((uint8_t*)pattern, pattern_length);
+        } else if (!strcmp(token, "ext_offset")) {
+            char *offset = strtok(NULL, " ");
+            g_Trigger->SetExtOffset(atoi(offset));
+        } else if (!strcmp(token, "repeat")) {
+            char *offset = strtok(NULL, " ");
+            g_Trigger->SetRepeat(atoi(offset));
+        } else if (!strcmp(token, "trigger_type")) {
+            char *trigger_type = strtok(NULL, " ");
+            if (!strcmp(trigger_type, "serial")) {
+                g_Trigger = new GhettoGlitcha::SerialTrigger();
+            } else if (!strcmp(trigger_type, "signal")) {
+                g_Trigger = new GhettoGlitcha::SignalTrigger();
+            } else if (!strcmp(trigger_type, "can")) {
+            }
             return true;
-        } else if (!strcmp(token, "baud")) {
-            ((SerialTrigger*)g_Trigger)->SetBaudRate(atoi(strtok(NULL, " ")));
-            return true;
+        }
+        const char *trigger_type = g_Trigger->TriggerType();
+        Serial.printf("Trigger Mode: %s\n", trigger_type);
+        if (!strcmp(trigger_type, "Serial")) {
+            if (!strcmp(token, "pattern")) {
+                char *pattern = strtok(NULL, " ");
+                uint32_t pattern_length = strlen(pattern);
+                pattern[pattern_length] = '\0';
+                ((SerialTrigger*)g_Trigger)->SetPattern((uint8_t*)pattern, pattern_length);
+                return true;
+            } else if (!strcmp(token, "baud")) {
+                ((SerialTrigger*)g_Trigger)->SetBaudRate(atoi(strtok(NULL, " ")));
+                return true;
+            }
+        } 
+        if (!strcmp(trigger_type, "Signal")) {
+            if (!strcmp(token, "pin")) {
+                ((SignalTrigger*)g_Trigger)->SetPin(atoi(strtok(NULL, " ")));
+                return true;
+            }
         }
         return false;
     }
@@ -86,7 +122,6 @@ namespace GhettoGlitcha {
     static void ArmedTriggerWaitPattern(void *p_Trigger) {
         // Pass in an instance of the trigger object.
         GenericTrigger *c_Trigger = (GenericTrigger *)p_Trigger;
-        Serial.println("We're still alive.");
         for (;;) {
             if (c_Trigger->Test()) { 
                 Serial.println("Hit!");

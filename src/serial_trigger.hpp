@@ -14,8 +14,11 @@ namespace GhettoGlitcha {
         void Disarm();
         void SetPattern(uint8_t *pattern, uint32_t size);
         void SetBaudRate(uint32_t baud);
+        const char* TriggerType();
         bool Test();
         bool IsArmed();
+        void SetExtOffset(uint64_t cycles);
+        void SetRepeat(uint64_t cycles);
 
     private:
         uint8_t *m_MatchBuffer;
@@ -23,6 +26,7 @@ namespace GhettoGlitcha {
         uint32_t m_PatternLength;
         uint32_t m_Baud;
         HardwareSerial *m_SerialPort;
+        uint64_t c_RepeatCycles, c_ExtOffsetCycles;
     };
 }
 

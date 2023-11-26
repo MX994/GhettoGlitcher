@@ -3,6 +3,7 @@
 
 #include "generic_trigger.hpp"
 #include "serial_trigger.hpp"
+#include "signal_trigger.hpp"
 #include "hardware_map.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
