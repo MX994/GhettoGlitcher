@@ -1,5 +1,9 @@
 import serial
+import time
 
-sock = serial.Serial('/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_A1012XEH-if00-port0', 115200)
-while True:
-  sock.write('yeo'.encode())
+sock = serial.Serial('COM7', 9600)
+sock.write(b'ping\n')
+sock.timeout = 2
+time.sleep(0.3)
+while sock.in_waiting > 0:
+  print(sock.read())

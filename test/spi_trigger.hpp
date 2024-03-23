@@ -7,18 +7,19 @@
 #include "hardware_map.hpp"
 
 namespace GhettoGlitcha {
-    class SerialTrigger : public GenericTrigger {
+    class SPITrigger : public GenericTrigger {
     public:
-        SerialTrigger();
+        SPITrigger();
         bool Arm();
         void Disarm();
+        void SetTriggerType()
         void SetPattern(uint8_t *pattern, uint32_t size);
         void SetBaudRate(uint32_t baud);
         bool Test();
         bool IsArmed();
         void SetExtOffset(uint64_t cycles);
         void SetRepeat(uint64_t cycles);
-        const char *TriggerType();
+
     private:
         uint8_t *m_MatchBuffer;
         uint8_t *m_Pattern;

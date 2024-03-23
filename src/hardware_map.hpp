@@ -12,4 +12,11 @@
 #define UART_TX 1
 #define UART_RX 3
 
+// SPI Stuff
+
+
+// LED Stuff
+#define LED_MATRIX_PWR 4
+#define LED_MATRIX_DATA 21
 #endif
+

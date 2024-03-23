@@ -5,7 +5,7 @@
 GhettoGlitcha::Console *g_Console;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     g_Console = new GhettoGlitcha::Console();
     g_Console->Execute();
 }

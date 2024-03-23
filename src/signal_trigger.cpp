@@ -31,24 +31,11 @@ namespace GhettoGlitcha {
     bool SignalTrigger::Test() {
         if (this->m_Armed) {
             while (!digitalRead(g_Pin));
-            
-            digitalWrite(EMP_TRIGGER_PIN, HIGH);
-            delayMicroseconds(200);
-            digitalWrite(EMP_TRIGGER_PIN, LOW);
-
-            // Disable this to prevent multiple reports.
-            this->Disarm();
+            this->Glitch();
+            // this->Disarm();
             return true;
         }
         return false;
-    }
-
-    void SignalTrigger::SetExtOffset(uint64_t cycles) {
-        this->c_ExtOffsetCycles = cycles;
-    }
-
-    void SignalTrigger::SetRepeat(uint64_t cycles) {
-        this->c_RepeatCycles = cycles;
     }
 
     const char *SignalTrigger::TriggerType() {

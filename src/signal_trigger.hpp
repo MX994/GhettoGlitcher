@@ -21,7 +21,6 @@ namespace GhettoGlitcha {
 
     private:
         uint32_t g_Pin;
-        uint64_t c_RepeatCycles, c_ExtOffsetCycles;
     };
 }
 

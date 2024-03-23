@@ -1,7 +1,7 @@
 #include "serial_trigger.hpp"
 
 namespace GhettoGlitcha {
-    SerialTrigger::SerialTrigger() {
+    SPITrigger::SPITrigger() {
         // Initialize all variables.
         this->m_MatchBuffer = nullptr;
         this->m_Pattern = nullptr;
@@ -12,7 +12,7 @@ namespace GhettoGlitcha {
         pinMode(EMP_TRIGGER_PIN, OUTPUT);
     }
 
-    void SerialTrigger::SetPattern(uint8_t *pattern, uint32_t size) {
+    void SPITrigger::SetPattern(uint8_t *pattern, uint32_t size) {
         // If buffer was used before, wipe and free.
         if (this->m_MatchBuffer) {
             memset(this->m_MatchBuffer, 0, this->m_PatternLength);
@@ -33,11 +33,11 @@ namespace GhettoGlitcha {
         this->m_Pattern[this->m_PatternLength] = '\0';
     }
 
-    void SerialTrigger::SetBaudRate(uint32_t baud) { 
+    void SPITrigger::SetBaudRate(uint32_t baud) { 
         m_Baud = baud;
     }
 
-    bool SerialTrigger::Arm() {
+    bool SPITrigger::Arm() {
         if (!this->m_MatchBuffer) {
             Serial.println("Invalid pattern; aborting.");
             return false;
@@ -50,18 +50,18 @@ namespace GhettoGlitcha {
         return true;
     }
 
-    void SerialTrigger::Disarm() {
+    void SPITrigger::Disarm() {
         Serial.println("Stopped waiting for pattern.");
         m_SerialPort->end();
         this->m_Armed = false;
     }
 
-    bool SerialTrigger::IsArmed() {
+    bool SPITrigger::IsArmed() {
         return m_Armed;
     }
 
     // UART ISR.
-    bool SerialTrigger::Test() {
+    bool SPITrigger::Test() {
         // Only parse if data && is armed.
         if (this->m_Armed) {
             // Shift all elements left by 1 (discarding buf[0]).
@@ -71,19 +71,19 @@ namespace GhettoGlitcha {
             // Add new element to buffer.
             while (m_SerialPort->available() == 0);
             this->m_MatchBuffer[this->m_PatternLength - 1] = m_SerialPort->read();
-            // Serial.println(this->m_MatchBuffer[this->m_PatternLength]);
+            Serial.println(this->m_MatchBuffer[this->m_PatternLength]);
 
             // Check if it matches pattern.
             if (!memcmp(this->m_MatchBuffer, this->m_Pattern, this->m_PatternLength)) {
                 this->Glitch();
-                // this->Disarm();
+                this->Disarm();
                 return true;
             }
         }
         return false;
     }
 
-    const char *SerialTrigger::TriggerType() {
-        return "Serial";
+    const char *SPITrigger::TriggerType() {
+        return "SPI";
     }
 }
